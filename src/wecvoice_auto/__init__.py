@@ -26,7 +26,7 @@ from .errors import (
 from .sender import SendResult, VoiceSender
 from .voices import DEFAULT_VOICE, PRESETS, VoiceProfile, list_presets, resolve_voice
 
-__version__ = "0.0.0"
+__version__ = "0.0.1"
 __all__ = [
     "AudioDeviceError",
     "AudioRoutingError",

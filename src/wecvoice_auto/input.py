@@ -58,7 +58,7 @@ class HoldToTalk:
 
     def __init__(self, trigger: str = "alt", button=None, *, press_delay: float = 0.0) -> None:
         if trigger not in ("alt", "button"):
-            raise ValueError("trigger 必须是 'alt' 或 'button'")
+            raise ValueError("trigger must be 'alt' or 'button'")
         self.trigger = trigger
         self.button = button
         self.press_delay = max(0.0, float(press_delay))
@@ -84,7 +84,7 @@ class HoldToTalk:
             rect = self._button_rect()
             if rect is None:
                 raise VoiceSendError(
-                    "trigger='button' 但没有找到微信语音按钮；可以改用 trigger='alt'。"
+                    "trigger='button' but the WeChat voice button was not found; use trigger='alt' instead."
                 )
             self._rect = rect
             x = (rect[0] + rect[2]) // 2

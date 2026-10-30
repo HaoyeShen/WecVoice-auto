@@ -56,92 +56,92 @@ class VoiceProfile:
 PRESETS: Dict[str, VoiceProfile] = {
     "arona": VoiceProfile(
         id="arona",
-        label="阿洛娜（近似）",
+        label="Arona (approx.)",
         voice="zh-CN-XiaoyiNeural",
         rate="+5%",
         pitch="+12Hz",
         volume="+0%",
-        description="清爽、稍微上扬的少女音，阿洛娜风格近似，非官方原声。",
+        description="Bright, slightly pitched-up girl voice; an Arona-style approximation, not the official voice.",
     ),
     "arona-happy": VoiceProfile(
         id="arona-happy",
-        label="阿洛娜·元气",
+        label="Arona · Energetic",
         voice="zh-CN-XiaoyiNeural",
         rate="+12%",
         pitch="+20Hz",
         volume="+5%",
-        description="语速更快、音调更高的元气版本。",
+        description="Faster and higher-pitched energetic variant.",
     ),
     "arona-soft": VoiceProfile(
         id="arona-soft",
-        label="阿洛娜·轻声",
+        label="Arona · Soft",
         voice="zh-CN-XiaoyiNeural",
         rate="-4%",
         pitch="+8Hz",
         volume="-5%",
-        description="放慢语速、降低音量的夜间版本。",
+        description="Slower, quieter night variant.",
     ),
     "plana": VoiceProfile(
         id="plana",
-        label="普拉娜（近似）",
+        label="Plana (approx.)",
         voice="zh-CN-XiaoxiaoNeural",
         rate="-5%",
         pitch="+0Hz",
-        description="平静、柔和的声线，适合冷淡一点的角色。",
+        description="Calm, soft delivery for a cooler character.",
     ),
     "xiaoyi": VoiceProfile(
         id="xiaoyi",
-        label="晓伊·少女",
+        label="Xiaoyi · Girl",
         voice="zh-CN-XiaoyiNeural",
-        description="Edge TTS 自带少女音，不加修饰。",
+        description="Edge's native young girl voice, no tuning.",
     ),
     "xiaoxiao": VoiceProfile(
         id="xiaoxiao",
-        label="晓晓·温柔",
+        label="Xiaoxiao · Gentle",
         voice="zh-CN-XiaoxiaoNeural",
         rate="-2%",
-        description="Edge TTS 自带温柔女声。",
+        description="Edge's native gentle female voice.",
     ),
     "yunxi": VoiceProfile(
         id="yunxi",
-        label="云希·少年",
+        label="Yunxi · Boy",
         voice="zh-CN-YunxiNeural",
         language="zh-CN",
-        description="年轻男声。",
+        description="Young male voice.",
     ),
     "yunjian": VoiceProfile(
         id="yunjian",
-        label="云健·旁白",
+        label="Yunjian · Narrator",
         voice="zh-CN-YunjianNeural",
-        description="低沉男声，适合旁白。",
+        description="Deep male voice for narration.",
     ),
     "xiaobei": VoiceProfile(
         id="xiaobei",
-        label="晓北·东北",
+        label="Xiaobei · Northeastern",
         voice="zh-CN-liaoning-XiaobeiNeural",
-        description="东北口音女声。",
+        description="Female voice with a Northeastern accent.",
     ),
     "xiaoni": VoiceProfile(
         id="xiaoni",
-        label="晓妮·陕西",
+        label="Xiaoni · Shaanxi",
         voice="zh-CN-shaanxi-XiaoniNeural",
-        description="陕西口音女声。",
+        description="Female voice with a Shaanxi accent.",
     ),
     "nanami": VoiceProfile(
         id="nanami",
-        label="七海·日语",
+        label="Nanami · Japanese",
         voice="ja-JP-NanamiNeural",
         language="ja-JP",
-        description="日语女声；阿洛娜的台词是日语时可以试试。",
+        description="Japanese female voice; try it for Japanese lines.",
     ),
     "arona-jp": VoiceProfile(
         id="arona-jp",
-        label="阿洛娜·日语近似",
+        label="Arona · Japanese",
         voice="ja-JP-NanamiNeural",
         rate="+3%",
         pitch="+10Hz",
         language="ja-JP",
-        description="日语少女音，风格近似。",
+        description="Japanese girl voice, style approximation.",
     ),
 }
 
@@ -158,7 +158,7 @@ def _validate(name: str, value: str, pattern: re.Pattern) -> str:
     text = str(value).strip()
     if not pattern.match(text):
         raise ValueError(
-            f"{name} 的格式不对：{text!r}；示例：rate='+10%', pitch='+5Hz', volume='+0%'"
+            f"Invalid {name} format: {text!r}; example: rate='+10%', pitch='+5Hz', volume='+0%'"
         )
     return text
 
@@ -188,11 +188,11 @@ def resolve_voice(
             id=reference,
             label=reference,
             voice=reference,
-            description="自定义 Edge TTS 音色。",
+            description="Custom Edge TTS voice.",
         )
     else:
         known = "、".join(PRESETS)
-        raise ValueError(f"未知音色：{reference!r}。内置音色：{known}")
+        raise ValueError(f"Unknown voice: {reference!r}. Built-in voices: {known}")
 
     changes = {}
     if rate is not None:

@@ -33,8 +33,8 @@ def _pycaw():
         from pycaw.pycaw import AudioUtilities
     except Exception as exc:  # pragma: no cover - optional Windows dependency
         raise AudioRoutingError(
-            "无法加载 pycaw；请先 pip install pycaw。"
-            "如果不想自动切换默认录音设备，可设置 switch_default_input=False。"
+            "Failed to load pycaw; install it with 'pip install pycaw'. "
+            "Set switch_default_input=False to skip automatic device switching."
         ) from exc
     return AudioUtilities
 
@@ -58,7 +58,7 @@ def list_endpoints() -> List[Endpoint]:
     try:
         devices = AudioUtilities.GetAllDevices()
     except Exception as exc:  # noqa: BLE001
-        raise AudioRoutingError(f"枚举 Windows 音频端点失败：{exc}") from exc
+        raise AudioRoutingError(f"Failed to enumerate Windows audio endpoints: {exc}") from exc
     for device in devices:
         try:
             name = str(device.FriendlyName or "").strip()
@@ -80,10 +80,10 @@ def _match_endpoint(needle: str) -> Optional[Endpoint]:
     wanted = needle.lower()
     matches = [item for item in list_endpoints() if wanted in item.name.lower()]
     if not matches:
-        names = "；".join(item.name for item in list_endpoints()) or "（无）"
+        names = "; ".join(item.name for item in list_endpoints()) or "(none)"
         raise AudioRoutingError(
-            f"找不到录音端点 {needle!r}。当前端点：{names}\n"
-            "提示：VB-CABLE 安装后会出现 “CABLE Output (VB-Audio Virtual Cable)”。"
+            f"Capture endpoint {needle!r} not found. Current endpoints: {names}\n"
+            "Hint: VB-CABLE creates \"CABLE Output (VB-Audio Virtual Cable)\"."
         )
     matches.sort(key=lambda item: (0 if item.name.lower().startswith(wanted) else 1, len(item.name)))
     return matches[0]
@@ -140,7 +140,7 @@ def _apply_default_endpoint(endpoint_id: str) -> None:
         AudioUtilities.SetDefaultDevice(endpoint_id, roles)
         return
     except Exception as first_error:  # noqa: BLE001
-        log.debug("pycaw.SetDefaultDevice 失败，尝试直接调用 IPolicyConfig：%s", first_error)
+        log.debug("pycaw.SetDefaultDevice failed; calling IPolicyConfig directly: %s", first_error)
     try:
         from comtypes import CLSCTX_ALL, CoCreateInstance
 
@@ -153,9 +153,9 @@ def _apply_default_endpoint(endpoint_id: str) -> None:
             policy.SetDefaultEndpoint(endpoint_id, int(value))
     except Exception as second_error:  # noqa: BLE001
         raise AudioRoutingError(
-            f"切换默认录音设备失败：{second_error}\n"
-            "可以手动把“声音设置 → 输入”切到 CABLE Output，"
-            "再设置 switch_default_input=False。"
+            f"Failed to switch the default recording device: {second_error}\n"
+            "Set CABLE Output as the default input manually, "
+            "then set switch_default_input=False."
         ) from second_error
 
 
@@ -171,8 +171,8 @@ def set_default_capture(needle: str) -> Optional[Endpoint]:
     current = get_default_capture()
     if current is None or current.id != target.id:
         log.warning(
-            "默认录音设备切换后读到的是 %s（期望 %s），可能被系统策略或驱动覆盖",
-            current.name if current else "未知",
+            "Default recording device reads %s after switching (expected %s); a system policy or driver may override it",
+            current.name if current else "unknown",
             target.name,
         )
     return previous
@@ -185,7 +185,7 @@ def restore_capture(previous: Optional[Endpoint]) -> None:
         _apply_default_endpoint(previous.id)
         time.sleep(0.2)
     except Exception as exc:  # noqa: BLE001
-        log.warning("恢复默认录音设备失败：%s", exc)
+        log.warning("Failed to restore the default recording device: %s", exc)
 
 
 class AudioRouting:
@@ -221,7 +221,7 @@ class AudioRouting:
             current = get_default_capture()
             if current and self.input_name.lower() not in current.name.lower():
                 log.warning(
-                    "默认录音设备是 %r，不是 %r；如果微信录到静音，请手动切换。",
+                    "Default recording device is %r, not %r; switch it manually if WeChat records silence.",
                     current.name,
                     self.input_name,
                 )
@@ -239,7 +239,7 @@ def check_microphone_permission() -> Tuple[Optional[bool], str]:
     try:
         import winreg
     except ImportError:  # pragma: no cover
-        return None, "非 Windows 环境"
+        return None, "not a Windows environment"
     key_path = (
         r"Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager"
         r"\ConsentStore\microphone\NonPackaged"
@@ -247,7 +247,7 @@ def check_microphone_permission() -> Tuple[Optional[bool], str]:
     try:
         root = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path)
     except OSError:
-        return None, "没有找到麦克风授权记录（首次录音时系统会询问）"
+        return None, "no microphone consent record yet (Windows will ask on first recording)"
     try:
         count = winreg.QueryInfoKey(root)[0]
         for index in range(count):
@@ -271,4 +271,4 @@ def check_microphone_permission() -> Tuple[Optional[bool], str]:
             winreg.CloseKey(root)
         except OSError:
             pass
-    return None, "未找到微信的麦克风授权记录"
+    return None, "WeChat microphone consent record not found"

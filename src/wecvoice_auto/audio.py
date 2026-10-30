@@ -46,7 +46,7 @@ def _sounddevice():
     try:
         import sounddevice as sd
     except Exception as exc:  # pragma: no cover - platform packaging
-        raise AudioDeviceError(f"无法加载 sounddevice：{exc}") from exc
+        raise AudioDeviceError(f"Failed to load sounddevice: {exc}") from exc
     return sd
 
 
@@ -57,7 +57,7 @@ def list_devices(kind: Optional[str] = None) -> List[DeviceInfo]:
     try:
         devices = sd.query_devices()
     except Exception as exc:  # noqa: BLE001
-        raise AudioDeviceError(f"枚举音频设备失败：{exc}") from exc
+        raise AudioDeviceError(f"Failed to enumerate audio devices: {exc}") from exc
     for index, item in enumerate(devices):
         inputs = int(item.get("max_input_channels", 0))
         outputs = int(item.get("max_output_channels", 0))
@@ -89,14 +89,14 @@ def _match_score(name: str, needle: str) -> int:
 def find_device(needle: str, kind: str) -> DeviceInfo:
     """Find the best device whose name contains ``needle``."""
     if kind not in ("input", "output"):
-        raise ValueError("kind 必须是 'input' 或 'output'")
+        raise ValueError("kind must be 'input' or 'output'")
     candidates = [item for item in list_devices(kind) if _match_score(item.name, needle) < 99]
     if not candidates:
-        available = "；".join(f"[{d.index}] {d.name}" for d in list_devices(kind)) or "（无）"
+        available = "; ".join(f"[{d.index}] {d.name}" for d in list_devices(kind)) or "(none)"
         raise AudioDeviceError(
-            f"找不到 {'录音' if kind == 'input' else '播放'}设备 {needle!r}。"
-            f"当前可用：{available}\n"
-            "提示：本库依赖 VB-Audio Virtual Cable，请先安装并在系统声音设置里确认设备名。"
+            f"{'Input' if kind == 'input' else 'Output'} device {needle!r} not found. "
+            f"Available: {available}\n"
+            "Hint: install VB-Audio Virtual Cable and confirm the device name in Windows sound settings."
         )
     candidates.sort(key=lambda item: (_match_score(item.name, needle), len(item.name), item.index))
     return candidates[0]
@@ -107,7 +107,7 @@ def resolve_output(ref: DeviceRef = None) -> DeviceInfo:
     if isinstance(ref, int):
         info = sd.query_devices(ref)
         if int(info.get("max_output_channels", 0)) <= 0:
-            raise AudioDeviceError(f"设备 {ref} 不是播放设备")
+            raise AudioDeviceError(f"Device {ref} is not an output device")
         return DeviceInfo(ref, str(info.get("name", "")), "output",
                           int(info["max_output_channels"]), float(info.get("default_samplerate", 0)),
                           int(info.get("hostapi", 0)))
@@ -116,7 +116,7 @@ def resolve_output(ref: DeviceRef = None) -> DeviceInfo:
     try:
         info = sd.query_devices(kind="output")
     except Exception as exc:  # noqa: BLE001
-        raise AudioDeviceError(f"没有可用的默认播放设备：{exc}") from exc
+        raise AudioDeviceError(f"No default output device: {exc}") from exc
     return DeviceInfo(-1, str(info.get("name", "")), "output",
                       int(info.get("max_output_channels", 0)),
                       float(info.get("default_samplerate", 0)),
@@ -176,10 +176,10 @@ def play_clip(
         fallback_rate = int(round(target.sample_rate)) or 44100
         if fallback_rate == int(clip.sample_rate):
             raise AudioDeviceError(
-                f"播放到 {target.name!r} 失败：{first_error}\n"
-                "请确认该设备未被独占，并在声音设置里把采样率设为 48000 Hz。"
+                f"Playback to {target.name!r} failed: {first_error}\n"
+                "Make sure the device is not exclusive and its sample rate is 48000 Hz."
             ) from first_error
-        log.warning("设备 %s 不接受 %d Hz，改用 %d Hz 重试", target.name, clip.sample_rate, fallback_rate)
+        log.warning("Device %s rejected %d Hz; retrying at %d Hz", target.name, clip.sample_rate, fallback_rate)
         resampled = resample_linear(data, int(clip.sample_rate), fallback_rate)
         try:
             sd.play(
@@ -190,8 +190,8 @@ def play_clip(
             )
         except Exception as second_error:  # noqa: BLE001
             raise AudioDeviceError(
-                f"播放到 {target.name!r} 失败：{second_error}\n"
-                "请确认设备存在、未被独占，并检查默认采样率。"
+                f"Playback to {target.name!r} failed: {second_error}\n"
+                "Make sure the device exists, is not exclusive, and supports its default sample rate."
             ) from second_error
     finally:
         try:

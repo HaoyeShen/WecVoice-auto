@@ -3,7 +3,7 @@
 > 在 Windows 上，用**免费的 Edge TTS** 合成语音，再通过**微信 4.1.9+ 原生“按住说话”**发送真正的微信语音气泡。
 > 不是语音文件、不是语音转文字，对方收到的就是一条可以点开播放的语音消息。
 
-当前版本：**0.0.0（首个预览版）**
+当前版本：**0.0.1（运行时输出英文）**
 
 ---
 
@@ -104,10 +104,10 @@ wecvoice doctor
 期望看到：
 
 ```
-[OK] 虚拟播放端：[x] CABLE Input (VB-Audio Virtual Cable)
-[OK] 虚拟录音端：[y] CABLE Output (VB-Audio Virtual Cable)
-[OK] 微信窗口：'微信'，句柄 ...
-[OK] 触发方式：按住 Alt 说话（推荐）
+[OK] Virtual output: [x] CABLE Input (VB-Audio Virtual Cable)
+[OK] Virtual input: [y] CABLE Output (VB-Audio Virtual Cable)
+[OK] WeChat window: '微信', hwnd ...
+[OK] Trigger: Hold Alt to talk (recommended)
 ```
 
 ## 快速开始

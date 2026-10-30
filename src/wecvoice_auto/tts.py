@@ -115,7 +115,7 @@ class EdgeTTS:
     def synthesize(self, text: str, profile: VoiceProfile) -> AudioClip:
         clean = (text or "").strip()
         if not clean:
-            raise TTSError("要合成的文本是空的")
+            raise TTSError("Text to synthesize is empty")
         last_error: Optional[BaseException] = None
         for attempt in range(1, self.retries + 1):
             try:
@@ -123,7 +123,7 @@ class EdgeTTS:
                 mp3 = _run_async(self._mp3_async(clean, profile))
                 clip = decode_mp3(mp3, sample_rate=self.sample_rate, text=clean)
                 log.debug(
-                    "Edge TTS %s 合成完成：%d 字，%.2fs，用时 %.2fs",
+                    "Edge TTS %s synthesized %d chars, audio %.2fs, elapsed %.2fs",
                     profile.id,
                     len(clean),
                     clip.duration,
@@ -132,10 +132,10 @@ class EdgeTTS:
                 return clip
             except Exception as exc:  # noqa: BLE001 - retried below
                 last_error = exc
-                log.warning("Edge TTS 第 %d/%d 次失败：%s", attempt, self.retries, exc)
+                log.warning("Edge TTS attempt %d/%d failed: %s", attempt, self.retries, exc)
                 if attempt < self.retries:
                     time.sleep(0.8 * attempt)
-        raise TTSError(f"Edge TTS 合成失败（需要联网）：{last_error}") from last_error
+        raise TTSError(f"Edge TTS synthesis failed (network required): {last_error}") from last_error
 
     async def _mp3_async(self, text: str, profile: VoiceProfile) -> bytes:
         import edge_tts
@@ -156,18 +156,18 @@ class EdgeTTS:
 
         await asyncio.wait_for(collect(), timeout=self.timeout)
         if not chunks:
-            raise TTSError("Edge TTS 没有返回音频（文本可能全是标点）")
+            raise TTSError("Edge TTS returned no audio (the text may be only punctuation)")
         return b"".join(chunks)
 
 
 def decode_mp3(data: bytes, *, sample_rate: int = 48000, text: str = "") -> AudioClip:
     """Decode MP3 bytes to a mono float32 clip at ``sample_rate``."""
     if not data:
-        raise TTSError("音频数据为空")
+        raise TTSError("Audio data is empty")
     try:
         import miniaudio
     except ImportError as exc:  # pragma: no cover - packaging error
-        raise TTSError("缺少 miniaudio，请先 pip install miniaudio") from exc
+        raise TTSError("miniaudio is missing; install it with 'pip install miniaudio'") from exc
 
     try:
         decoded = miniaudio.decode(
@@ -177,7 +177,7 @@ def decode_mp3(data: bytes, *, sample_rate: int = 48000, text: str = "") -> Audi
             sample_rate=int(sample_rate),
         )
     except Exception as exc:  # noqa: BLE001
-        raise TTSError(f"MP3 解码失败：{exc}") from exc
+        raise TTSError(f"MP3 decoding failed: {exc}") from exc
 
     samples = np.asarray(decoded.samples, dtype=np.float32).reshape(-1)
     samples = trim_silence(samples, sample_rate=int(sample_rate))
@@ -195,7 +195,7 @@ def list_edge_voices(locale_prefix: Optional[str] = None) -> List[Dict[str, Any]
     try:
         voices = _run_async(_list_voices_async())
     except Exception as exc:  # noqa: BLE001
-        raise TTSError(f"获取 Edge 音色列表失败（需要联网）：{exc}") from exc
+        raise TTSError(f"Failed to fetch the Edge voice list (network required): {exc}") from exc
     if locale_prefix:
         prefix = locale_prefix.lower()
         voices = [v for v in voices if str(v.get("Locale", "")).lower().startswith(prefix)]

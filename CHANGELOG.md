@@ -4,6 +4,15 @@ All notable changes to this project are documented here.  The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.0.1] - 2026-10-31
+
+### Changed
+
+- All runtime output is now English: CLI help and messages, the `doctor`
+  report, error messages, log lines, and built-in voice labels/descriptions.
+  Chinese is kept only where it is functional (WeChat window/chat matching)
+  or supplied by the user (chat names, message text).
+
 ## [0.0.0] - 2026-10-31
 
 First public preview.

@@ -74,15 +74,15 @@ def _cmd_voices(args: argparse.Namespace) -> int:
     if args.json:
         _print_json([p.to_dict() for p in presets])
         return 0
-    print(f"{'ID':<14} {'音色':<16} {'Edge 名称':<32} rate / pitch")
+    print(f"{'ID':<14} {'Voice':<18} {'Edge voice':<32} rate / pitch")
     print("-" * 90)
     for item in presets:
-        mark = " *默认" if item.id == "arona" else ""
+        mark = " *default" if item.id == "arona" else ""
         print(
-            f"{item.id:<14} {item.label:<16} {item.voice:<32} "
+            f"{item.id:<14} {item.label:<18} {item.voice:<32} "
             f"{item.rate} / {item.pitch}{mark}"
         )
-    print("\n提示：用 `wecvoice voices --online --locale zh` 查看 Edge 全部中文音色。")
+    print("\nTip: use `wecvoice voices --online --locale zh` to list all Edge Chinese voices.")
     return 0
 
 
@@ -96,15 +96,15 @@ def _cmd_say(args: argparse.Namespace) -> int:
     )
     text = clean_text(args.text)
     if not text:
-        print("没有可朗读的文本", file=sys.stderr)
+        print("No text to speak.", file=sys.stderr)
         return 2
     engine = EdgeTTS(sample_rate=config.sample_rate, timeout=config.edge_timeout, retries=config.edge_retries)
     clip = engine.synthesize(text, profile)
     if args.save:
         target = clip.to_wav(args.save)
-        print(f"已保存：{target}（{clip.duration:.2f}s，{profile.label}）")
+        print(f"Saved: {target} ({clip.duration:.2f}s, {profile.label})")
     else:
-        print(f"试听：{profile.label} / {profile.voice} / {clip.duration:.2f}s")
+        print(f"Preview: {profile.label} / {profile.voice} / {clip.duration:.2f}s")
     play_clip(clip, args.device or config.preview_device, gain=config.gain)
     return 0
 
@@ -139,15 +139,15 @@ def _cmd_send(args: argparse.Namespace) -> int:
         if args.json:
             _print_json({"ok": False, "error": str(exc)})
         else:
-            print(f"发送失败：{exc}", file=sys.stderr)
+            print(f"Send failed: {exc}", file=sys.stderr)
         return 1
     if args.json:
         _print_json(result.to_dict())
     else:
         print(
-            f"已发送：{result.chunks} 段，共 {result.total_seconds:.2f}s，"
-            f"音色 {result.voice}"
-            + (f"，会话 {result.chat}" if result.chat else "")
+            f"Sent: {result.chunks} clip(s), {result.total_seconds:.2f}s total, "
+            f"voice {result.voice}"
+            + (f", chat {result.chat}" if result.chat else "")
         )
     return 0
 
@@ -158,12 +158,12 @@ def _cmd_config(args: argparse.Namespace) -> int:
     if args.set:
         for assignment in args.set:
             if "=" not in assignment:
-                print(f"格式应为 key=value：{assignment}", file=sys.stderr)
+                print(f"Expected key=value: {assignment}", file=sys.stderr)
                 return 2
             key, raw = assignment.split("=", 1)
             key = key.strip()
             if key not in config.to_dict():
-                print(f"未知配置项：{key}", file=sys.stderr)
+                print(f"Unknown config key: {key}", file=sys.stderr)
                 return 2
             current = config.to_dict()[key]
             value: Any = raw.strip()
@@ -178,12 +178,12 @@ def _cmd_config(args: argparse.Namespace) -> int:
             setattr(config, key, value)
         config.validate()
         saved = config.save(args.config)
-        print(f"已保存：{saved}")
+        print(f"Saved: {saved}")
         return 0
     if args.show:
         print(json.dumps(config.to_dict(), ensure_ascii=False, indent=2))
     else:
-        print(f"配置文件：{path}")
+        print(f"Config file: {path}")
         print(json.dumps(config.to_dict(), ensure_ascii=False, indent=2))
     return 0
 
@@ -191,54 +191,54 @@ def _cmd_config(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="wecvoice",
-        description="用免费 Edge TTS + 微信原生语音键，发送真正的微信语音消息。",
+        description="Send real WeChat voice messages with free Edge TTS and the native voice shortcut.",
     )
     parser.add_argument("--version", action="version", version=f"WecVoice-auto {__version__}")
-    parser.add_argument("--config", help="配置文件路径（默认 %%APPDATA%%/WecVoice-auto/config.json）")
-    parser.add_argument("-v", "--verbose", action="store_true", help="输出调试日志")
+    parser.add_argument("--config", help="config file path (default %%APPDATA%%/WecVoice-auto/config.json)")
+    parser.add_argument("-v", "--verbose", action="store_true", help="enable debug logging")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    doctor = subparsers.add_parser("doctor", help="检查音频、微信、TTS 环境")
+    doctor = subparsers.add_parser("doctor", help="check audio, WeChat and TTS environment")
     doctor.add_argument("--json", action="store_true")
     doctor.set_defaults(func=_cmd_doctor)
 
-    devices = subparsers.add_parser("devices", help="列出音频设备")
+    devices = subparsers.add_parser("devices", help="list audio devices")
     devices.add_argument("--json", action="store_true")
     devices.set_defaults(func=_cmd_devices)
 
-    voices = subparsers.add_parser("voices", help="列出内置音色或 Edge 在线音色")
-    voices.add_argument("--online", action="store_true", help="从 Edge 拉取在线音色列表")
-    voices.add_argument("--locale", default=None, help="按语言过滤，例如 zh、ja")
+    voices = subparsers.add_parser("voices", help="list built-in presets or Edge online voices")
+    voices.add_argument("--online", action="store_true", help="fetch the voice list from Edge")
+    voices.add_argument("--locale", default=None, help="filter by locale, e.g. zh or ja")
     voices.add_argument("--json", action="store_true")
     voices.set_defaults(func=_cmd_voices)
 
-    say = subparsers.add_parser("say", help="只在本机试听，不发送到微信")
+    say = subparsers.add_parser("say", help="preview locally without sending to WeChat")
     say.add_argument("text")
     say.add_argument("--voice")
     say.add_argument("--rate")
     say.add_argument("--pitch")
     say.add_argument("--volume")
-    say.add_argument("--device", help="播放设备（默认系统扬声器）")
-    say.add_argument("--save", help="保存为 WAV 文件")
+    say.add_argument("--device", help="playback device (default: system speakers)")
+    say.add_argument("--save", help="save the clip as a WAV file")
     say.set_defaults(func=_cmd_say)
 
-    send = subparsers.add_parser("send", help="发送语音到当前打开的微信会话")
+    send = subparsers.add_parser("send", help="send a voice message to the open WeChat chat")
     send.add_argument("text")
-    send.add_argument("--chat", help="目标会话名（用于校验；不会自动切换会话）")
+    send.add_argument("--chat", help="target chat name (verification only; does not switch chats)")
     send.add_argument("--voice")
     send.add_argument("--rate")
     send.add_argument("--pitch")
     send.add_argument("--volume")
     send.add_argument("--trigger", choices=("alt", "button"), default=None)
     send.add_argument("--max-chars", type=int, default=None)
-    send.add_argument("--no-switch", action="store_true", help="不自动切换默认录音设备")
-    send.add_argument("--no-restore", action="store_true", help="发送后不恢复原默认录音设备")
-    send.add_argument("--no-focus", action="store_true", help="不点击输入框")
-    send.add_argument("--save-audio", action="store_true", help="保留生成的 WAV")
+    send.add_argument("--no-switch", action="store_true", help="do not switch the default recording device")
+    send.add_argument("--no-restore", action="store_true", help="do not restore the previous recording device")
+    send.add_argument("--no-focus", action="store_true", help="do not click the chat input")
+    send.add_argument("--save-audio", action="store_true", help="keep the generated WAV files")
     send.add_argument("--json", action="store_true")
     send.set_defaults(func=_cmd_send)
 
-    config = subparsers.add_parser("config", help="查看或修改配置")
+    config = subparsers.add_parser("config", help="show or modify configuration")
     config.add_argument("--show", action="store_true")
     config.add_argument("--set", action="append", metavar="KEY=VALUE")
     config.set_defaults(func=_cmd_config)
@@ -253,11 +253,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     try:
         return int(args.func(args) or 0)
     except KeyboardInterrupt:
-        print("\n已取消", file=sys.stderr)
+        print("\nCancelled.", file=sys.stderr)
         return 130
     except WecVoiceError as exc:
-        print(f"错误：{exc}", file=sys.stderr)
+        print(f"Error: {exc}", file=sys.stderr)
         return 1
     except ValueError as exc:
-        print(f"参数错误：{exc}", file=sys.stderr)
+        print(f"Invalid argument: {exc}", file=sys.stderr)
         return 2

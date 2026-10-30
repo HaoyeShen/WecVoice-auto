@@ -111,15 +111,15 @@ class VoiceSender:
         )
         chunks = split_text(text, max_chars=self.config.max_chars)
         if not chunks:
-            raise VoiceSendError("清理后没有可朗读的文本（可能只有表情包标签或链接）")
+            raise VoiceSendError("No speakable text after cleanup (maybe only sticker tags or links).")
 
         clips: List[AudioClip] = []
         for chunk in chunks:
             clip = self.tts.synthesize(chunk, profile)
             if clip.duration > self.config.max_seconds:
                 raise VoiceTooLongError(
-                    f"这一段语音有 {clip.duration:.1f} 秒，超过微信 60 秒上限；"
-                    "请把 max_chars 调小，或缩短文本。"
+                    f"Clip is {clip.duration:.1f}s, over WeChat's 60s limit; "
+                    "reduce max_chars or shorten the text."
                 )
             clips.append(clip)
             if self.config.save_audio:
@@ -135,7 +135,7 @@ class VoiceSender:
                 voice=profile.id,
                 chunks=len(clips),
                 durations=[round(c.duration, 2) for c in clips],
-                message="试听完成（未发送到微信）",
+                message="Preview complete (not sent to WeChat)",
                 preview=True,
             )
 
@@ -144,23 +144,23 @@ class VoiceSender:
         if self.config.activate_window:
             if not self.window.activate():
                 raise VoiceSendError(
-                    "无法把微信窗口切到前台，已取消发送（避免按键落到别的窗口）。"
-                    "请手动点一下微信聊天窗口后重试。"
+                    "Could not bring the WeChat window to the foreground; send cancelled to avoid typing into another window. "
+                    "Click the WeChat chat window and retry."
                 )
         current_chat = ""
         if self.config.verify_chat:
             current_chat = self.window.ensure_chat(chat)
         if self.config.focus_input:
             if not self.window.focus_input(click_fallback=self.config.click_input_fallback):
-                log.warning("没能聚焦微信输入框，仍尝试按住 Alt 说话")
+                log.warning("Could not focus the WeChat input; still trying to hold Alt.")
 
         button = None
         if active_trigger == "button":
             button = self.window.voice_button()
             if button is None:
                 raise VoiceSendError(
-                    "没有找到微信语音按钮。请把 trigger 设为 'alt'，"
-                    "或确认微信 4.1.9+ 的语音按钮在界面中可见。"
+                    "WeChat voice button not found. Set trigger='alt', "
+                    "or make sure the WeChat 4.1.9+ voice button is visible."
                 )
 
         durations: List[float] = []
@@ -169,7 +169,7 @@ class VoiceSender:
             with routing:
                 for index, clip in enumerate(clips, start=1):
                     log.info(
-                        "发送第 %d/%d 段：%s，%.1f 秒",
+                        "Sending clip %d/%d: %s, %.1fs",
                         index, len(clips), profile.label, clip.duration,
                     )
                     self._send_one(clip, active_trigger, button)
@@ -187,7 +187,7 @@ class VoiceSender:
             voice=profile.id,
             chunks=len(clips),
             durations=durations,
-            message=f"已发送 {len(clips)} 条语音",
+            message=f"Sent {len(clips)} voice message(s)",
         )
 
     def preview(self, text: str, **kwargs: Any) -> SendResult:
@@ -211,9 +211,9 @@ class VoiceSender:
         target = base / f"{stamp}-{index:02d}.wav"
         try:
             clip.to_wav(target)
-            log.info("已保存音频：%s", target)
+            log.info("Saved audio: %s", target)
         except Exception as exc:  # noqa: BLE001
-            log.warning("保存音频失败：%s", exc)
+            log.warning("Failed to save audio: %s", exc)
 
     def check_devices(self) -> Dict[str, Any]:
         """Quick static check used by the CLI doctor."""

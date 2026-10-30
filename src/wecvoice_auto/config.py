@@ -67,17 +67,17 @@ class Config:
 
     def validate(self) -> None:
         if self.trigger not in ("alt", "button"):
-            raise ValueError("trigger 只能是 'alt' 或 'button'")
+            raise ValueError("trigger must be 'alt' or 'button'")
         if self.max_chars <= 0:
-            raise ValueError("max_chars 必须大于 0")
+            raise ValueError("max_chars must be greater than 0")
         if not (1.0 <= self.max_seconds <= 59.5):
-            raise ValueError("max_seconds 必须在 1 到 59.5 之间")
+            raise ValueError("max_seconds must be between 1 and 59.5")
         if not (8000 <= self.sample_rate <= 192000):
-            raise ValueError("sample_rate 不合理")
+            raise ValueError("sample_rate is out of range")
         if not (0.0 < self.gain <= 4.0):
-            raise ValueError("gain 必须在 0 到 4 之间")
+            raise ValueError("gain must be between 0 and 4")
         if self.lead_seconds < 0 or self.tail_seconds < 0:
-            raise ValueError("lead_seconds / tail_seconds 不能为负数")
+            raise ValueError("lead_seconds / tail_seconds cannot be negative")
 
     @classmethod
     def load(cls, path: Optional[str | Path] = None) -> "Config":
@@ -88,9 +88,9 @@ class Config:
         try:
             raw = json.loads(config_path.read_text(encoding="utf-8"))
         except (OSError, ValueError) as exc:
-            raise ValueError(f"配置文件读取失败：{config_path}（{exc}）") from exc
+            raise ValueError(f"Failed to read config file {config_path}: {exc}") from exc
         if not isinstance(raw, dict):
-            raise ValueError(f"配置文件格式不对：{config_path}")
+            raise ValueError(f"Invalid config file format: {config_path}")
         return cls.from_dict(raw)
 
     @classmethod

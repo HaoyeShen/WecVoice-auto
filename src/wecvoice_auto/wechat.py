@@ -111,7 +111,7 @@ class WeChatWindow:
     def ensure(self) -> "WeChatWindow":
         if not self.find():
             raise WeChatNotRunningError(
-                "没有找到微信主窗口。请先登录微信 4.1.9 或更高版本，并保持主窗口打开。"
+                "WeChat main window not found. Sign in to WeChat 4.1.9+ and keep the main window open."
             )
         return self
 
@@ -144,7 +144,7 @@ class WeChatWindow:
             time.sleep(0.25)
             return _user32.GetForegroundWindow() == self.hwnd
         except Exception as exc:  # noqa: BLE001
-            log.warning("激活微信窗口失败：%s", exc)
+            log.warning("Failed to activate the WeChat window: %s", exc)
             return False
 
     def rect(self) -> Optional[Tuple[int, int, int, int]]:
@@ -166,7 +166,7 @@ class WeChatWindow:
         try:
             import uiautomation as auto
         except Exception as exc:  # noqa: BLE001
-            log.debug("uiautomation 不可用：%s", exc)
+            log.debug("uiautomation is unavailable: %s", exc)
             self._uia_failed = True
             return None
         try:
@@ -177,7 +177,7 @@ class WeChatWindow:
                 self._uia = control
                 return control
         except Exception as exc:  # noqa: BLE001
-            log.debug("UIA 主窗口定位失败：%s", exc)
+            log.debug("UIA main window lookup failed: %s", exc)
         self._uia_failed = True
         return None
 
@@ -225,13 +225,13 @@ class WeChatWindow:
             return self.current_chat()
         current = self.current_chat()
         if not current:
-            log.warning("无法通过 UIA 读取当前会话名，跳过会话校验（目标：%s）", chat)
+            log.warning("Cannot read the current chat name via UIA; skipping chat verification (target: %s)", chat)
             return current
         if _same_chat(current, chat):
             return current
         raise ChatMismatchError(
-            f"当前打开的是「{current}」，不是「{chat}」。请先在微信里打开目标会话；"
-            "本库负责发送，不负责搜索/切换会话。"
+            f"Current chat is {current!r}, not {chat!r}. Open the target chat in WeChat first; "
+            "this library only sends and does not search or switch chats."
         )
 
     def focus_input(self, *, click_fallback: bool = True) -> bool:
@@ -243,7 +243,7 @@ class WeChatWindow:
                 time.sleep(0.15)
                 return True
             except Exception as exc:  # noqa: BLE001
-                log.debug("UIA 聚焦输入框失败：%s", exc)
+                log.debug("UIA focus on the input box failed: %s", exc)
         if not click_fallback:
             return False
         box = self.rect()
@@ -261,14 +261,14 @@ class WeChatWindow:
             time.sleep(0.05)
             _user32.mouse_event(0x0004, 0, 0, 0, 0)
             time.sleep(0.2)
-            log.debug("已用坐标兜底点击输入区 (%d, %d)", x, y)
+            log.debug("Clicked the input area by coordinates (%d, %d)", x, y)
             return True
         except Exception as exc:  # noqa: BLE001
-            log.warning("坐标兜底聚焦失败：%s", exc)
+            log.warning("Coordinate fallback focus failed: %s", exc)
             return False
 
     def voice_button(self):
-        """Find the native 语音 button when ``trigger='button'`` is used."""
+        """Find the native voice button when ``trigger='button'`` is used."""
         root = self.uia()
         if root is None:
             return None
@@ -291,7 +291,7 @@ class WeChatWindow:
                 except Exception:  # noqa: BLE001
                     continue
         except Exception as exc:  # noqa: BLE001
-            log.debug("查找语音按钮失败：%s", exc)
+            log.debug("Failed to find the voice button: %s", exc)
         return candidates[0] if candidates else None
 
 
