@@ -37,6 +37,10 @@ _user32.SetForegroundWindow.argtypes = [wintypes.HWND]
 _user32.ShowWindow.argtypes = [wintypes.HWND, ctypes.c_int]
 _user32.IsIconic.argtypes = [wintypes.HWND]
 _user32.BringWindowToTop.argtypes = [wintypes.HWND]
+_user32.GetForegroundWindow.restype = wintypes.HWND
+_user32.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+_user32.GetWindowThreadProcessId.restype = wintypes.DWORD
+_user32.SetFocus.argtypes = [wintypes.HWND]
 
 
 def _window_text(hwnd: int) -> str:
@@ -115,6 +119,14 @@ class WeChatWindow:
             )
         return self
 
+    def is_foreground(self) -> bool:
+        if self.hwnd is None:
+            return False
+        try:
+            return int(_user32.GetForegroundWindow()) == int(self.hwnd)
+        except Exception:  # noqa: BLE001
+            return False
+
     def activate(self) -> bool:
         if self.hwnd is None and not self.find():
             return False
@@ -124,7 +136,8 @@ class WeChatWindow:
             _user32.BringWindowToTop(self.hwnd)
             if _user32.SetForegroundWindow(self.hwnd):
                 time.sleep(0.2)
-                return True
+                if self.is_foreground():
+                    return True
             # Windows may refuse foreground changes from a background process.
             foreground = _user32.GetForegroundWindow()
             current_tid = ctypes.windll.kernel32.GetCurrentThreadId()
@@ -142,7 +155,7 @@ class WeChatWindow:
                 for tid in attached:
                     _user32.AttachThreadInput(current_tid, tid, False)
             time.sleep(0.25)
-            return _user32.GetForegroundWindow() == self.hwnd
+            return self.is_foreground()
         except Exception as exc:  # noqa: BLE001
             log.warning("Failed to activate the WeChat window: %s", exc)
             return False

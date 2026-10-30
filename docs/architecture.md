@@ -2,7 +2,8 @@
 
 ## 1. 为什么是“虚拟声卡 + Alt”
 
-微信 4.1.9 起，Windows 版可以在聊天框的发送按钮旁按住语音键，或**按住 `Alt`** 说话，松开后发送，最长 60 秒。
+微信 4.1.9 起，Windows 版可以在聊天框的发送按钮旁按住语音键，或**按住右侧 `Alt`（AltGr）**说话，松开后发送，最长 60 秒。
+微信 4.2 明确只响应**右侧 Alt**，左侧 Alt 无效。
 这意味着只要让微信“听到”我们想说的内容，微信自己就会完成 SILK 编码、上传和气泡渲染，不需要协议层。
 
 Windows 没有“给某个应用单独指定麦克风”的公开能力（只有输出端的 per-app 路由），所以必须把**系统默认录音设备**临时切到虚拟声卡的录音端。
@@ -79,7 +80,8 @@ t=1.25+d+settle  restore default capture
 
 ### `input.py`
 
-- `keybd_event(VK_MENU)` 产生 `WM_SYSKEYDOWN/UP`，与真人按 Alt 一致。
+- `keybd_event(VK_RMENU, 0x38, KEYEVENTF_EXTENDEDKEY)` 产生右侧 Alt 的
+  `WM_SYSKEYDOWN/UP`，与真人按右 Alt 一致；微信 4.2 只认右 Alt。
 - `HoldToTalk` 是上下文管理器，`__exit__` 一定释放按键/鼠标，异常也不会卡住 Alt。
 - `release_all()` 作为进程级兜底。
 

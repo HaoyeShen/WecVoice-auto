@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wecvoice-auto"
-version = "0.0.1"
+version = "0.0.2"
 description = "Send real WeChat voice messages on Windows with free Edge TTS and switchable voices."
 readme = "README.md"
 requires-python = ">=3.9"

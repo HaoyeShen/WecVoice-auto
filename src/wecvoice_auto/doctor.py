@@ -164,7 +164,7 @@ def run_checks(config: Optional[Config] = None) -> List[Check]:
         checks.append(Check("warn", "WeChat version", "not found in the registry; 4.1.9+ is required for native voice messages"))
 
     if cfg.trigger == "alt":
-        checks.append(Check("ok", "Trigger", "Hold Alt to talk (recommended)"))
+        checks.append(Check("ok", "Trigger", "Hold RIGHT Alt (AltGr) to talk (recommended)"))
     else:
         checks.append(Check("warn", "Trigger", "Hold the on-screen voice button (requires the UIA tree)"))
 

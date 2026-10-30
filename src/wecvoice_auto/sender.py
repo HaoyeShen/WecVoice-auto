@@ -152,7 +152,16 @@ class VoiceSender:
             current_chat = self.window.ensure_chat(chat)
         if self.config.focus_input:
             if not self.window.focus_input(click_fallback=self.config.click_input_fallback):
-                log.warning("Could not focus the WeChat input; still trying to hold Alt.")
+                log.warning("Could not focus the WeChat input; still trying to hold right Alt.")
+
+        foreground_check = getattr(self.window, "is_foreground", None)
+        if callable(foreground_check) and not foreground_check():
+            raise VoiceSendError(
+                "WeChat is not in the foreground, so the right-Alt key would go to another window. "
+                "Click the WeChat chat window and run the command again (or use --no-focus)."
+            )
+        if callable(foreground_check):
+            log.info("WeChat is in the foreground; holding right Alt now.")
 
         button = None
         if active_trigger == "button":

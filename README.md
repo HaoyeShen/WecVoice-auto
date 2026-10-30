@@ -3,19 +3,19 @@
 > 在 Windows 上，用**免费的 Edge TTS** 合成语音，再通过**微信 4.1.9+ 原生“按住说话”**发送真正的微信语音气泡。
 > 不是语音文件、不是语音转文字，对方收到的就是一条可以点开播放的语音消息。
 
-当前版本：**0.0.1（运行时输出英文）**
+当前版本：**0.0.2（支持微信 4.2 右侧 Alt）**
 
 ---
 
 ## 它解决什么问题
 
-微信电脑版从 **4.1.9** 开始才支持“发送语音消息”（发送按钮旁的语音键，或按住 `Alt` 说话），最长 60 秒。
+微信电脑版从 **4.1.9** 开始才支持“发送语音消息”（发送按钮旁的语音键，或按住**右侧 `Alt`** 说话），最长 60 秒。
 这给机器人留出了一条干净的路线：
 
 1. 用 TTS 把回复合成为音频；
 2. 把音频播放到一块**虚拟声卡**；
 3. 把虚拟声卡的录音端设为微信的“麦克风”；
-4. 程序按住 `Alt`（或语音按钮），播放音频，松开；
+4. 程序按住**右侧 `Alt`**（或语音按钮），播放音频，松开；
 5. 微信自己完成录音编码并把语音气泡发出去。
 
 整个过程**不注入微信进程、不读写微信数据库、不截图、不劫持协议**，只使用 Windows 的 UI 自动化与音频设备。
@@ -107,7 +107,7 @@ wecvoice doctor
 [OK] Virtual output: [x] CABLE Input (VB-Audio Virtual Cable)
 [OK] Virtual input: [y] CABLE Output (VB-Audio Virtual Cable)
 [OK] WeChat window: '微信', hwnd ...
-[OK] Trigger: Hold Alt to talk (recommended)
+[OK] Trigger: Hold RIGHT Alt (AltGr) to talk (recommended)
 ```
 
 ## 快速开始
@@ -236,7 +236,7 @@ wecvoice config --set rate=+0%
 |---|---|
 | 对方收到语音但没有声音 | 默认录音设备不是 CABLE Output。运行 `wecvoice doctor`；手动切换后**重启微信**。 |
 | 语音开头/结尾被截断 | 增大 `lead_seconds` / `tail_seconds`，例如 `0.6` / `0.5`。 |
-| 按 Alt 没反应 | 微信窗口没有前台焦点；确认微信 ≥ 4.1.9；尝试 `--trigger button`。 |
+| 按 Alt 没反应 | 微信 4.2 只认**右侧 Alt**；确认按的是右 Alt，微信窗口有焦点；仍不行再试 `--trigger button`。 |
 | 找不到 CABLE 设备 | VB-CABLE 未安装或未重启；确认名字里包含 `CABLE`。 |
 | 切换默认麦克风失败 | 系统策略/驱动覆盖。手动设置后加 `--no-switch`。 |
 | 发送后麦克风没恢复 | 检查 `restore_default_input`；异常退出时运行 `wecvoice config --set restore_default_input=true`。 |

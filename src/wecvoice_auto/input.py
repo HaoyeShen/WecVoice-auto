@@ -12,23 +12,84 @@ from .errors import VoiceSendError
 
 log = logging.getLogger("wecvoice.input")
 
+VK_RMENU = 0xA5
 VK_MENU = 0x12
+KEYEVENTF_EXTENDEDKEY = 0x0001
 KEYEVENTF_KEYUP = 0x0002
 MOUSEEVENTF_LEFTDOWN = 0x0002
 MOUSEEVENTF_LEFTUP = 0x0004
+INPUT_KEYBOARD = 1
 
 _user32 = ctypes.windll.user32
-_user32.keybd_event.argtypes = [wintypes.BYTE, wintypes.BYTE, wintypes.DWORD, ctypes.c_size_t]
 _user32.SetCursorPos.argtypes = [ctypes.c_int, ctypes.c_int]
 _user32.mouse_event.argtypes = [wintypes.DWORD, wintypes.DWORD, wintypes.DWORD, wintypes.DWORD, ctypes.c_size_t]
 
 
-def alt_down() -> None:
-    _user32.keybd_event(VK_MENU, 0, 0, 0)
+class KEYBDINPUT(ctypes.Structure):
+    _fields_ = [
+        ("wVk", wintypes.WORD),
+        ("wScan", wintypes.WORD),
+        ("dwFlags", wintypes.DWORD),
+        ("time", wintypes.DWORD),
+        ("dwExtraInfo", ctypes.c_size_t),
+    ]
 
 
-def alt_up() -> None:
-    _user32.keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, 0)
+class MOUSEINPUT(ctypes.Structure):
+    _fields_ = [
+        ("dx", wintypes.LONG),
+        ("dy", wintypes.LONG),
+        ("mouseData", wintypes.DWORD),
+        ("dwFlags", wintypes.DWORD),
+        ("time", wintypes.DWORD),
+        ("dwExtraInfo", ctypes.c_size_t),
+    ]
+
+
+class HARDWAREINPUT(ctypes.Structure):
+    _fields_ = [
+        ("uMsg", wintypes.DWORD),
+        ("wParamL", wintypes.WORD),
+        ("wParamH", wintypes.WORD),
+    ]
+
+
+class _INPUTUNION(ctypes.Union):
+    _fields_ = [("mi", MOUSEINPUT), ("ki", KEYBDINPUT), ("hi", HARDWAREINPUT)]
+
+
+class INPUT(ctypes.Structure):
+    _anonymous_ = ("u",)
+    _fields_ = [("type", wintypes.DWORD), ("u", _INPUTUNION)]
+
+
+_user32.SendInput.argtypes = [wintypes.UINT, ctypes.POINTER(INPUT), ctypes.c_int]
+_user32.SendInput.restype = wintypes.UINT
+
+
+def _key_event(vk: int, scan: int, flags: int) -> bool:
+    """Inject one keyboard event with SendInput and report whether it landed."""
+    event = INPUT(type=INPUT_KEYBOARD)
+    event.ki = KEYBDINPUT(vk, scan, flags, 0, 0)
+    sent = _user32.SendInput(1, ctypes.byref(event), ctypes.sizeof(INPUT))
+    return int(sent) == 1
+
+
+def alt_down() -> bool:
+    """Hold the RIGHT Alt (AltGr) key.
+
+    WeChat 4.2 only listens to the right Alt for hold-to-talk; the left Alt
+    does nothing.  The extended-key flag is required so the keystroke is
+    delivered as VK_RMENU instead of VK_LMENU.
+    """
+    ok = _key_event(VK_RMENU, 0x38, KEYEVENTF_EXTENDEDKEY)
+    if not ok:
+        log.warning("SendInput right-Alt down was rejected (Windows error %s)", ctypes.windll.kernel32.GetLastError())
+    return ok
+
+
+def alt_up() -> bool:
+    return _key_event(VK_RMENU, 0x38, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP)
 
 
 def left_down() -> None:
@@ -48,7 +109,7 @@ def click_at(x: int, y: int) -> None:
 
 
 class HoldToTalk:
-    """Hold Alt (or the voice button) while audio is played.
+    """Hold right Alt (or the voice button) while audio is played.
 
     Used as a context manager::
 
@@ -78,7 +139,11 @@ class HoldToTalk:
 
     def __enter__(self) -> "HoldToTalk":
         if self.trigger == "alt":
-            alt_down()
+            if not alt_down():
+                raise VoiceSendError(
+                    "Windows rejected the simulated right-Alt key. "
+                    "Start the terminal from the normal desktop (not an elevated or restricted shell) and retry."
+                )
             self._pressed = True
         else:
             rect = self._button_rect()

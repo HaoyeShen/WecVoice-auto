@@ -4,6 +4,19 @@ All notable changes to this project are documented here.  The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.0.2] - 2026-10-31
+
+### Fixed
+
+- Hold the **right Alt** (`VK_RMENU` + `KEYEVENTF_EXTENDEDKEY`) instead of the
+  left Alt. WeChat 4.2 only recognises the right Alt for hold-to-talk.
+- Use `SendInput` with the complete `INPUT` union (40 bytes on 64-bit Windows).
+  The previous 32-byte structure made Windows reject every synthetic key, so
+  WeChat never entered recording mode and no voice bubble appeared.
+- Verify that WeChat is the foreground window right before pressing Alt; abort
+  with a clear error instead of sending the keystroke to another window.
+- Added a regression test for the right-Alt scancode/extended flags.
+
 ## [0.0.1] - 2026-10-31
 
 ### Changed
