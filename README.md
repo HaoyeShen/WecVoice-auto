@@ -81,6 +81,12 @@
 pip install "git+https://github.com/HaoyeShen/WecVoice-auto.git"
 ```
 
+没有安装 `git` 时，可以直接安装 tag 压缩包：
+
+```powershell
+pip install "https://github.com/HaoyeShen/WecVoice-auto/archive/refs/tags/v0.0.0.zip"
+```
+
 或者克隆后开发安装：
 
 ```powershell
@@ -237,6 +243,7 @@ wecvoice config --set rate=+0%
 | Edge TTS 超时 | 需要联网；检查代理/防火墙是否能访问 `speech.platform.bing.com`。 |
 | 提示超过 60 秒 | 调小 `max_chars`，或缩短文本。 |
 | 微信录到的是环境音 | 默认设备被切回真实麦克风；关闭其他会议/录音软件，重新运行。 |
+| 在受限沙箱/低完整性进程里运行，微信窗口能看到但没反应 | 微信以 Medium 完整性运行，Low 完整性进程会被 UIPI 拦截。请从桌面正常启动终端，不要从沙箱或受限文件面板启动。 |
 
 ## 隐私与边界
 
