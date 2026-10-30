@@ -59,9 +59,10 @@ t=1.25+d+settle  restore default capture
 ### `devices.py`
 
 - `pycaw` 枚举 Windows 音频端点、读取默认麦克风。
-- `IPolicyConfigVista`（CLSID `{870af99c-...}`，IID `{568b9108-...}`）的
-  `SetDefaultEndpoint` 切换默认设备；对 `eConsole` / `eMultimedia` /
-  `eCommunications` 三个角色都设置。
+- `AudioUtilities.SetDefaultDevice` 调用未公开的 PolicyConfig COM（CLSID
+  `{870af99c-...}`），对 `eConsole` / `eMultimedia` / `eCommunications`
+  三个角色都设置默认设备；旧版 pycaw 缺少该 helper 时退回直接调用
+  `IPolicyConfig.SetDefaultEndpoint`。
 - 这是声音控制面板使用的同一套未公开接口，Win10/11 稳定，但不是微软文档化 API。
 
 ### `wechat.py`
